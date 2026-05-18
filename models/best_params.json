@@ -1,0 +1,48 @@
+{
+  "KNN": {
+    "params": {
+      "algorithm": "auto",
+      "leaf_size": 30,
+      "metric": "euclidean",
+      "metric_params": null,
+      "n_jobs": null,
+      "n_neighbors": 22,
+      "p": 2,
+      "weights": "uniform"
+    },
+    "MAE": 146264.33
+  },
+  "SVR": {
+    "params": {
+      "C": 100000.0,
+      "cache_size": 200,
+      "coef0": 0.0,
+      "degree": 3,
+      "epsilon": 50000.0,
+      "gamma": "scale",
+      "kernel": "linear",
+      "max_iter": -1,
+      "shrinking": true,
+      "tol": 0.001,
+      "verbose": false
+    },
+    "MAE": 138172.57
+  },
+  "\u00c1rbol": {
+    "params": {
+      "ccp_alpha": 0.0,
+      "criterion": "squared_error",
+      "max_depth": 3,
+      "max_features": null,
+      "max_leaf_nodes": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 2,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "random_state": 42,
+      "splitter": "best"
+    },
+    "MAE": 163335.09
+  }
+}

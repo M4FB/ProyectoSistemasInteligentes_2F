@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process version="10.2.000">
+  <context>
+    <input/>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="10.2.000" expanded="true" name="Process">
+    <parameter key="logverbosity" value="init"/>
+    <parameter key="random_seed" value="42"/>
+    <parameter key="send_mail" value="never"/>
+    <parameter key="encoding" value="SYSTEM"/>
+    <process expanded="true">
+
+      <!-- ── Carga y preprocesamiento ────────────────────────────── -->
+
+      <operator activated="true" class="read_csv" compatibility="10.2.000" expanded="true" height="68" name="Read CSV" width="90" x="45" y="187">
+        <parameter key="csv_file" value="/home/m4fb/Documents/ProyectoSI-2F/dataset/house_price_all_numeric.csv"/>
+        <parameter key="column_separators" value=","/>
+        <parameter key="first_row_as_names" value="true"/>
+        <parameter key="encoding" value="UTF-8"/>
+        <parameter key="data_management" value="auto"/>
+      </operator>
+
+      <operator activated="true" class="set_role" compatibility="10.2.000" expanded="true" height="82" name="Set Role" width="90" x="179" y="187">
+        <parameter key="attribute_name" value="Price"/>
+        <parameter key="target_role" value="label"/>
+        <list key="set_additional_roles"/>
+      </operator>
+
+      <operator activated="true" class="generate_attributes" compatibility="10.2.000" expanded="true" height="82" name="Generate Age" width="90" x="313" y="187">
+        <list key="function_descriptions">
+          <parameter key="Age" value="2024 - YearBuilt"/>
+        </list>
+        <parameter key="keep_all" value="true"/>
+      </operator>
+
+      <operator activated="true" class="select_attributes" compatibility="10.2.000" expanded="true" height="82" name="Select Features" width="90" x="447" y="187">
+        <parameter key="attribute_filter_type" value="subset"/>
+        <parameter key="attributes" value="Area|Bedrooms|Bathrooms|Floors|Location|Condition|Garage|View|Age"/>
+        <parameter key="also_apply_to_special_attributes_(id,_label..)" value="false"/>
+      </operator>
+
+      <!-- Multiply: duplica el dataset para las 3 ramas -->
+      <operator activated="true" class="multiply" compatibility="10.2.000" expanded="true" height="94" name="Multiply" width="90" x="581" y="187"/>
+
+      <!-- ── Rama 1: KNN ────────────────────────────────────────── -->
+
+      <operator activated="true" class="normalize" compatibility="10.2.000" expanded="true" height="82" name="Normalize KNN" width="90" x="715" y="34">
+        <parameter key="attribute_filter_type" value="all"/>
+        <parameter key="include_special_attributes" value="false"/>
+        <parameter key="method" value="Z-transformation"/>
+      </operator>
+
+      <operator activated="true" class="x_validation" compatibility="10.2.000" expanded="true" height="145" name="CV KNN" width="90" x="849" y="34">
+        <parameter key="number_of_folds" value="5"/>
+        <parameter key="sampling_type" value="shuffled sampling"/>
+        <parameter key="use_local_random_seed" value="true"/>
+        <parameter key="local_random_seed" value="42"/>
+        <process expanded="true" name="training">
+          <operator activated="true" class="k_nn" compatibility="10.2.000" expanded="true" height="82" name="k-NN" width="90" x="179" y="34">
+            <parameter key="k" value="22"/>
+            <parameter key="weighted_vote" value="false"/>
+            <parameter key="measure_types" value="NumericalMeasures"/>
+            <parameter key="numerical_measure" value="EuclideanDistance"/>
+          </operator>
+          <connect from_port="training" to_op="k-NN" to_port="training set"/>
+          <connect from_op="k-NN" from_port="model" to_port="model"/>
+        </process>
+        <process expanded="true" name="testing">
+          <operator activated="true" class="apply_model" compatibility="10.2.000" expanded="true" height="82" name="Apply Model" width="90" x="112" y="34"/>
+          <operator activated="true" class="performance_regression" compatibility="10.2.000" expanded="true" height="82" name="Performance" width="90" x="313" y="34">
+            <parameter key="root_mean_squared_error" value="true"/>
+            <parameter key="absolute_error" value="true"/>
+            <parameter key="squared_correlation" value="true"/>
+          </operator>
+          <connect from_port="test set" to_op="Apply Model" to_port="unlabelled data"/>
+          <connect from_port="model" to_op="Apply Model" to_port="model"/>
+          <connect from_op="Apply Model" from_port="labelled data" to_op="Performance" to_port="labelled data"/>
+          <connect from_op="Performance" from_port="performance" to_port="averagable 1"/>
+        </process>
+      </operator>
+
+      <!-- ── Rama 2: SVR ────────────────────────────────────────── -->
+
+      <operator activated="true" class="normalize" compatibility="10.2.000" expanded="true" height="82" name="Normalize SVR" width="90" x="715" y="187">
+        <parameter key="attribute_filter_type" value="all"/>
+        <parameter key="include_special_attributes" value="false"/>
+        <parameter key="method" value="Z-transformation"/>
+      </operator>
+
+      <operator activated="true" class="x_validation" compatibility="10.2.000" expanded="true" height="145" name="CV SVR" width="90" x="849" y="187">
+        <parameter key="number_of_folds" value="5"/>
+        <parameter key="sampling_type" value="shuffled sampling"/>
+        <parameter key="use_local_random_seed" value="true"/>
+        <parameter key="local_random_seed" value="42"/>
+        <process expanded="true" name="training">
+          <operator activated="true" class="support_vector_machine" compatibility="10.2.000" expanded="true" height="82" name="SVR" width="90" x="179" y="34">
+            <parameter key="kernel_type" value="dot"/>
+            <parameter key="C" value="100000.0"/>
+            <parameter key="epsilon" value="50000.0"/>
+            <parameter key="scale" value="true"/>
+          </operator>
+          <connect from_port="training" to_op="SVR" to_port="training set"/>
+          <connect from_op="SVR" from_port="model" to_port="model"/>
+        </process>
+        <process expanded="true" name="testing">
+          <operator activated="true" class="apply_model" compatibility="10.2.000" expanded="true" height="82" name="Apply Model" width="90" x="112" y="34"/>
+          <operator activated="true" class="performance_regression" compatibility="10.2.000" expanded="true" height="82" name="Performance" width="90" x="313" y="34">
+            <parameter key="root_mean_squared_error" value="true"/>
+            <parameter key="absolute_error" value="true"/>
+            <parameter key="squared_correlation" value="true"/>
+          </operator>
+          <connect from_port="test set" to_op="Apply Model" to_port="unlabelled data"/>
+          <connect from_port="model" to_op="Apply Model" to_port="model"/>
+          <connect from_op="Apply Model" from_port="labelled data" to_op="Performance" to_port="labelled data"/>
+          <connect from_op="Performance" from_port="performance" to_port="averagable 1"/>
+        </process>
+      </operator>
+
+      <!-- ── Rama 3: Arbol de Decision ─────────────────────────── -->
+
+      <operator activated="true" class="x_validation" compatibility="10.2.000" expanded="true" height="145" name="CV Tree" width="90" x="849" y="340">
+        <parameter key="number_of_folds" value="5"/>
+        <parameter key="sampling_type" value="shuffled sampling"/>
+        <parameter key="use_local_random_seed" value="true"/>
+        <parameter key="local_random_seed" value="42"/>
+        <process expanded="true" name="training">
+          <operator activated="true" class="parallel_random_forest" compatibility="10.2.000" expanded="true" height="82" name="Regression Tree" width="90" x="179" y="34">
+            <parameter key="number_of_trees" value="1"/>
+            <parameter key="criterion" value="least_square"/>
+            <parameter key="maximal_depth" value="3"/>
+            <parameter key="apply_pruning" value="true"/>
+            <parameter key="minimal_size_for_split" value="2"/>
+            <parameter key="minimal_leaf_size" value="2"/>
+            <parameter key="use_local_random_seed" value="true"/>
+            <parameter key="local_random_seed" value="42"/>
+          </operator>
+          <connect from_port="training" to_op="Regression Tree" to_port="training set"/>
+          <connect from_op="Regression Tree" from_port="model" to_port="model"/>
+        </process>
+        <process expanded="true" name="testing">
+          <operator activated="true" class="apply_model" compatibility="10.2.000" expanded="true" height="82" name="Apply Model" width="90" x="112" y="34"/>
+          <operator activated="true" class="performance_regression" compatibility="10.2.000" expanded="true" height="82" name="Performance" width="90" x="313" y="34">
+            <parameter key="root_mean_squared_error" value="true"/>
+            <parameter key="absolute_error" value="true"/>
+            <parameter key="squared_correlation" value="true"/>
+          </operator>
+          <connect from_port="test set" to_op="Apply Model" to_port="unlabelled data"/>
+          <connect from_port="model" to_op="Apply Model" to_port="model"/>
+          <connect from_op="Apply Model" from_port="labelled data" to_op="Performance" to_port="labelled data"/>
+          <connect from_op="Performance" from_port="performance" to_port="averagable 1"/>
+        </process>
+      </operator>
+
+      <!-- ── Conexiones principales ─────────────────────────────── -->
+      <connect from_op="Read CSV" from_port="output" to_op="Set Role" to_port="example set input"/>
+      <connect from_op="Set Role" from_port="example set output" to_op="Generate Age" to_port="example set input"/>
+      <connect from_op="Generate Age" from_port="example set output" to_op="Select Features" to_port="example set input"/>
+      <connect from_op="Select Features" from_port="example set output" to_op="Multiply" to_port="input"/>
+
+      <connect from_op="Multiply" from_port="output 1" to_op="Normalize KNN" to_port="example set input"/>
+      <connect from_op="Multiply" from_port="output 2" to_op="Normalize SVR" to_port="example set input"/>
+      <connect from_op="Multiply" from_port="output 3" to_op="CV Tree" to_port="training"/>
+
+      <connect from_op="Normalize KNN" from_port="example set output" to_op="CV KNN" to_port="training"/>
+      <connect from_op="Normalize SVR" from_port="example set output" to_op="CV SVR" to_port="training"/>
+
+      <connect from_op="CV KNN" from_port="performance" to_port="result 1"/>
+      <connect from_op="CV SVR" from_port="performance" to_port="result 2"/>
+      <connect from_op="CV Tree" from_port="performance" to_port="result 3"/>
+
+    </process>
+  </operator>
+</process>

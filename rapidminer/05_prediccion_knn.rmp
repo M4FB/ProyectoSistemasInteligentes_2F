@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<process version="10.2.000">
+  <context>
+    <input/>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="10.2.000" expanded="true" name="Process">
+    <parameter key="logverbosity" value="init"/>
+    <parameter key="random_seed" value="42"/>
+    <parameter key="send_mail" value="never"/>
+    <parameter key="encoding" value="SYSTEM"/>
+    <process expanded="true">
+
+      <!-- ── Dataset de entrenamiento ───────────────────────────── -->
+
+      <operator activated="true" class="read_csv" compatibility="10.2.000" expanded="true" height="68" name="Read Train" width="90" x="45" y="85">
+        <parameter key="csv_file" value="/home/m4fb/Documents/ProyectoSI-2F/dataset/house_price_all_numeric.csv"/>
+        <parameter key="column_separators" value=","/>
+        <parameter key="first_row_as_names" value="true"/>
+        <parameter key="encoding" value="UTF-8"/>
+        <parameter key="data_management" value="auto"/>
+      </operator>
+
+      <operator activated="true" class="set_role" compatibility="10.2.000" expanded="true" height="82" name="Set Role" width="90" x="179" y="85">
+        <parameter key="attribute_name" value="Price"/>
+        <parameter key="target_role" value="label"/>
+        <list key="set_additional_roles"/>
+      </operator>
+
+      <operator activated="true" class="generate_attributes" compatibility="10.2.000" expanded="true" height="82" name="Generate Age Train" width="90" x="313" y="85">
+        <list key="function_descriptions">
+          <parameter key="Age" value="2024 - YearBuilt"/>
+        </list>
+        <parameter key="keep_all" value="true"/>
+      </operator>
+
+      <operator activated="true" class="select_attributes" compatibility="10.2.000" expanded="true" height="82" name="Select Features Train" width="90" x="447" y="85">
+        <parameter key="attribute_filter_type" value="subset"/>
+        <parameter key="attributes" value="Area|Bedrooms|Bathrooms|Floors|Location|Condition|Garage|View|Age"/>
+        <parameter key="also_apply_to_special_attributes_(id,_label..)" value="false"/>
+      </operator>
+
+      <operator activated="true" class="normalize" compatibility="10.2.000" expanded="true" height="82" name="Normalize Train" width="90" x="581" y="85">
+        <parameter key="return_preprocessing_model" value="true"/>
+        <parameter key="attribute_filter_type" value="all"/>
+        <parameter key="include_special_attributes" value="false"/>
+        <parameter key="method" value="Z-transformation"/>
+      </operator>
+
+      <!-- ── Entrenamiento KNN con todo el dataset ──────────────── -->
+
+      <operator activated="true" class="k_nn" compatibility="10.2.000" expanded="true" height="82" name="k-NN" width="90" x="715" y="85">
+        <parameter key="k" value="22"/>
+        <parameter key="weighted_vote" value="false"/>
+        <parameter key="measure_types" value="NumericalMeasures"/>
+        <parameter key="numerical_measure" value="EuclideanDistance"/>
+      </operator>
+
+      <!-- ── Datos de prueba ────────────────────────────────────── -->
+
+      <operator activated="true" class="read_csv" compatibility="10.2.000" expanded="true" height="68" name="Read Test" width="90" x="45" y="255">
+        <parameter key="csv_file" value="/home/m4fb/Documents/ProyectoSI-2F/dataset/test_casas.csv"/>
+        <parameter key="column_separators" value=","/>
+        <parameter key="first_row_as_names" value="true"/>
+        <parameter key="encoding" value="UTF-8"/>
+        <parameter key="data_management" value="auto"/>
+      </operator>
+
+      <operator activated="true" class="generate_attributes" compatibility="10.2.000" expanded="true" height="82" name="Generate Age Test" width="90" x="179" y="255">
+        <list key="function_descriptions">
+          <parameter key="Age" value="2024 - YearBuilt"/>
+        </list>
+        <parameter key="keep_all" value="true"/>
+      </operator>
+
+      <operator activated="true" class="select_attributes" compatibility="10.2.000" expanded="true" height="82" name="Select Features Test" width="90" x="313" y="255">
+        <parameter key="attribute_filter_type" value="subset"/>
+        <parameter key="attributes" value="Area|Bedrooms|Bathrooms|Floors|Location|Condition|Garage|View|Age"/>
+        <parameter key="also_apply_to_special_attributes_(id,_label..)" value="false"/>
+      </operator>
+
+      <!-- Aplicar la misma normalización del entrenamiento a los datos de prueba -->
+      <operator activated="true" class="apply_model" compatibility="10.2.000" expanded="true" height="82" name="Apply Normalization" width="90" x="447" y="255"/>
+
+      <!-- ── Aplicar el modelo KNN ───────────────────────────────── -->
+
+      <operator activated="true" class="apply_model" compatibility="10.2.000" expanded="true" height="82" name="Apply KNN" width="90" x="715" y="255"/>
+
+      <!-- ── Conexiones ─────────────────────────────────────────── -->
+      <connect from_op="Read Train" from_port="output" to_op="Set Role" to_port="example set input"/>
+      <connect from_op="Set Role" from_port="example set output" to_op="Generate Age Train" to_port="example set input"/>
+      <connect from_op="Generate Age Train" from_port="example set output" to_op="Select Features Train" to_port="example set input"/>
+      <connect from_op="Select Features Train" from_port="example set output" to_op="Normalize Train" to_port="example set input"/>
+      <connect from_op="Normalize Train" from_port="example set output" to_op="k-NN" to_port="training set"/>
+      <connect from_op="Normalize Train" from_port="preprocessing model" to_op="Apply Normalization" to_port="model"/>
+
+      <connect from_op="Read Test" from_port="output" to_op="Generate Age Test" to_port="example set input"/>
+      <connect from_op="Generate Age Test" from_port="example set output" to_op="Select Features Test" to_port="example set input"/>
+      <connect from_op="Select Features Test" from_port="example set output" to_op="Apply Normalization" to_port="unlabelled data"/>
+      <connect from_op="Apply Normalization" from_port="labelled data" to_op="Apply KNN" to_port="unlabelled data"/>
+
+      <connect from_op="k-NN" from_port="model" to_op="Apply KNN" to_port="model"/>
+      <connect from_op="Apply KNN" from_port="labelled data" to_port="result 1"/>
+
+    </process>
+  </operator>
+</process>

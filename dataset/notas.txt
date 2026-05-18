@@ -1,0 +1,12 @@
+la db con 20% de test es viable
+
+primero se usa clean dataset para volver valores textuales a numericos
+luego se usa compare para hallar los mejores modelos
+
+porque elegir el k de 40 y no mas? 
+     el punto de partida mas optimo para hallar k es la raiz del numero de muestras de entrenamiento
+     - es lo suficientemente grande para ignorar el ruido (puntos atípicos), pero lo suficientemente pequeño para mantener las fronteras de decisión bien definidas.
+    - si es par lo mejor es ir por uno mas o uno menos, para ver cual usar
+    - https://stackoverflow.com/questions/33884325/ideal-k-value-in-knn-for-classification
+
+    

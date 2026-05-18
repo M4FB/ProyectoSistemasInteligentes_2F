@@ -1,0 +1,9 @@
+old/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Modelos entrenados (regenerables con engine.py)
+models/*.joblib
