@@ -6,6 +6,8 @@ from textual import on
 
 from engine import setup, predict, FEATURE_COLS
 
+M2_TO_SQFT = 10.7639
+
 
 class IntRange(Validator):
     def __init__(self, lo: int, hi: int) -> None:
@@ -25,7 +27,7 @@ class IntRange(Validator):
 class HousePriceApp(App):
 
     _LIMITS: dict[str, tuple[int, int, str]] = {
-        "area":      (50,   20_000, "Area (sqft)"),
+        "area":      (5,    2_000,  "Area (m²)"),
         "yearbuilt": (1800, 2024,   "Año construido"),
         "bedrooms":  (1,    20,     "Habitaciones"),
         "bathrooms": (1,    10,     "Baños"),
@@ -99,9 +101,9 @@ class HousePriceApp(App):
         yield Rule()
 
         with Horizontal(classes="fila"):
-            yield Label("Area (sqft):",     classes="etiqueta")
-            yield Input(value="1800", id="area",      placeholder="50 – 20 000",
-                        validators=[IntRange(50, 20_000)])
+            yield Label("Area (m²):",       classes="etiqueta")
+            yield Input(value="167", id="area",       placeholder="5 – 2 000",
+                        validators=[IntRange(5, 2_000)])
             yield Label("  Año construido:", classes="etiqueta")
             yield Input(value="1990", id="yearbuilt", placeholder="1800 – 2024",
                         validators=[IntRange(1800, 2024)])
@@ -172,6 +174,8 @@ class HousePriceApp(App):
             self.query_one("#resultado-texto", Static).update(
                 "⚠  Corrige los siguientes campos:\n" + "\n".join(errores))
             return
+
+        int_vals["area"] = round(int_vals["area"] * M2_TO_SQFT)
 
         features = {
             **int_vals,

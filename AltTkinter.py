@@ -17,6 +17,7 @@ from sklearn.tree import DecisionTreeRegressor
 
 FEATURE_COLS = ['Area', 'Bedrooms', 'Bathrooms', 'Floors',
                 'Location', 'Condition', 'Garage', 'View', 'Age']
+M2_TO_SQFT = 10.7639
 MODELS_DIR   = "models"
 PARAMS_FILE  = f"{MODELS_DIR}/best_params.json"
 JOBLIB_FILES = {"KNN": "knn.joblib", "SVR": "svr.joblib", "Árbol": "tree.joblib"}
@@ -135,7 +136,7 @@ class App(tk.Tk):
         # Entradas: (fila, col_lbl, col_w, label, key, default/opciones)
         # Las opciones son lista de (etiqueta, valor) para combos, o str para entries
         CAMPOS = [
-            (5, 0, 1, "Area (sqft):",    "area",      "1800"),
+            (5, 0, 1, "Area (m²):",       "area",      "167"),
             (5, 2, 3, "Año construido:", "yearbuilt", "1990"),
             (6, 0, 1, "Habitaciones:",   "bedrooms",  "3"),
             (6, 2, 3, "Pisos:",          "floors",    "1"),
@@ -185,7 +186,7 @@ class App(tk.Tk):
         self.lbl_res.grid(row=0, column=0, padx=12, pady=8, sticky="w")
 
     _LIMITS: dict = {
-        "area":      (50,   20_000, "Area (sqft)"),
+        "area":      (5,    2_000,  "Area (m²)"),
         "yearbuilt": (1800, 2024,   "Año construido"),
         "bedrooms":  (1,    20,     "Habitaciones"),
         "bathrooms": (1,    10,     "Baños"),
@@ -218,6 +219,8 @@ class App(tk.Tk):
                 foreground="red",
                 text="⚠  Corrige los siguientes campos:\n" + "\n".join(errores))
             return
+
+        features["area"] = round(features["area"] * M2_TO_SQFT)
 
         modelo = self.modelos[self.modelo_var.get()]
         precio = predict(modelo, features)
