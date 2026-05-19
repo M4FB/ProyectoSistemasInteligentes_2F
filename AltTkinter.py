@@ -184,30 +184,51 @@ class App(tk.Tk):
                                  font=("", 10), justify="left")
         self.lbl_res.grid(row=0, column=0, padx=12, pady=8, sticky="w")
 
+    _LIMITS: dict = {
+        "area":      (50,   20_000, "Area (sqft)"),
+        "yearbuilt": (1800, 2024,   "Año construido"),
+        "bedrooms":  (1,    20,     "Habitaciones"),
+        "bathrooms": (1,    10,     "Baños"),
+        "floors":    (1,    5,      "Pisos"),
+    }
+
     def _calcular(self):
-        try:
-            features = {}
-            for key, info in self.inputs.items():
-                if info["type"] == "entry":
-                    features[key] = int(info["var"].get())
-                else:
-                    idx = info["labels"].index(info["var"].get())
-                    features[key] = info["values"][idx]
-        except ValueError:
+        errores = []
+        features = {}
+
+        for key, info in self.inputs.items():
+            if info["type"] == "entry":
+                lo, hi, nombre = self._LIMITS[key]
+                raw = info["var"].get().strip()
+                try:
+                    n = int(raw)
+                except ValueError:
+                    errores.append(f"• {nombre}: debe ser un entero")
+                    continue
+                if not lo <= n <= hi:
+                    errores.append(f"• {nombre}: debe estar entre {lo} y {hi}")
+                    continue
+                features[key] = n
+            else:
+                idx = info["labels"].index(info["var"].get())
+                features[key] = info["values"][idx]
+
+        if errores:
             self.lbl_res.config(
-                text="⚠  Revisa los campos — todos deben ser números válidos.")
+                foreground="red",
+                text="⚠  Corrige los siguientes campos:\n" + "\n".join(errores))
             return
 
         modelo = self.modelos[self.modelo_var.get()]
         precio = predict(modelo, features)
         mae    = self.maes[self.modelo_var.get()]
 
-        self.lbl_res.config(text=(
-            f"Modelo:            {self.modelo_var.get()}\n"
-            f"Precio estimado:   ${precio:,.0f}\n"
-            f"Rango aproximado:  ${max(0, precio - mae):,.0f}  -  ${precio + mae:,.0f}\n"
-            f"Margen de error:   ± ${mae:,.0f}  (MAE del modelo)"
-        ))
+        self.lbl_res.config(
+            foreground="black",
+            text=(f"Modelo:            {self.modelo_var.get()}\n"
+                  f"Precio estimado:   ${precio:,.0f}\n"
+                  f"Rango aproximado:  ${max(0, precio - mae):,.0f}  -  ${precio + mae:,.0f}\n"
+                  f"Margen de error:   ± ${mae:,.0f}  (MAE del modelo)"))
 
 
 if __name__ == "__main__":
